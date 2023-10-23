@@ -20,15 +20,20 @@ The data is provided by Monash University: https://static.bc-edx.com/data/dla-1-
 
 ## Report
 ### Overview of the analysis
-* Explain the purpose of this analysis.
+The purpose of the analysis is to optimise a neural network to classify applications for crowdfunding and predict whether they will be succesful.
 
 ### Results
 * Using bulleted lists and images to support your answers, address the following questions:
 
 **Data Preprocessing**
 * What variable(s) are the target(s) for your model?
-* What variable(s) are the features for your model?
+> We classify the `IS_SUCCESSFUL` column: `1` for succesful and `0` for unsuccesful
+
 * What variable(s) should be removed from the input data because they are neither targets nor features?
+> The identification columns `EIN` and `NAME` are removed as they provide no valuable information
+
+* What variable(s) are the features for your model?
+> We use all the other columns in the CSV as presented above
 
 **Compiling, Training, and Evaluating the Model**
 * How many neurons, layers, and activation functions did you select for your neural network model, and why?
