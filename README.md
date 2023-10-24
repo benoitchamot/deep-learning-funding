@@ -210,9 +210,17 @@ An accuracy of 72.85% is achieved, which is still below the requirement.
 
 Changing the features, provide little to no improvement:
 - Adding the squared asked amount, leaves the accuracy at 72.85%
-- Changing the income from nominal to ordinal, only improves the accuracy by 0.01% 
+- Changing the income from nominal to ordinal, only improves the accuracy by 0.01%
+
+In Step 3, we add the `NAME` column back as a feature. Because it is a nominal column, we create dummies as part of the preprocessing step. We use `keras-tuner` to optimise the model and we eventually get an accuracy of 80.07%.
+
+This exceeds the requirement and the performance of all the other models. This however raises a question:  if the name of a company is a dominant feature in the algorithm to decide whether or not to get funding we would expect either:
+1. the model to be overfitted, and it would therfore not perform as well when data about new companies are provided, or
+2. the funding campaign decision-makers are biased and influenced by the company names. A strategy for a company requesting funding would basically be to give themselves the right name and to increase their chances of funding.
 
 ### Conclusions
+#### Summary of the results
+The accuracy obtained by the different models is given in the table below:
 
 <table>
     <tr>
@@ -251,4 +259,19 @@ Changing the features, provide little to no improvement:
         <td>72.86%</td>
         <td>Using the income as an ordinal feature</td>
     </tr>
+    <tr>
+        <td>Step 3</td>
+        <td>Optimised with keras-tuner</td>
+        <td>80.07%</td>
+        <td>Using the NAME as a feature</td>
+    </tr>
+</table>
+
+#### Recommendations
+- Use the Step 3 model, including the NAME column, only with companies that are included in the training and test sets.
+- Use the Step 2 model providing the accuracy of 72.86% with other companies as it relies on more objective data (excluding the company name, which seems more arbitrary)
+- Explore ways to include information that could be a by-product of the company name in a more objective way: e.g. number of previous application, number of previous successful campaigns, reputation, market share, number of employees, etc.
+
+#### Alternative model
+Because of the large number of dummies columns, it could be that a decision tree could be a better model for this type of data. Instead of defining complex non-linear separator in a large multi-dimensional space, taking decision step by step, in a more transparent way, could be better in this case.
 
