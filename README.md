@@ -64,7 +64,7 @@ Yes, by using the `NAME` as one of the features, we achieve an accuracy of 80%. 
 We take four main steps to approach the problem, as presented in this section.
 
 #### Step 1: First attempt
-The first step was simply to establish a baseline by constructing a simple network to get some preliminary results. The accuracy is used as the metric to optimise (this is the case in the next steps too.)
+The first step is simply to establish a baseline by constructing a simple network to get some preliminary results. The accuracy is used as the metric to optimise (this is the case in the next steps too.)
 
 The data are prepared in the following way:
 1. Import complete dataset and load it into a pandas DataFrame
@@ -78,6 +78,65 @@ The data are prepared in the following way:
 The model is then trained, evaluated and saved in the `AlphabetSoupCharity.h5` binary file.
 
 #### Step 2: Manual and automated tuning exploration
+The second step builds on the first one. We change the hyperparamters of the initial model one by one to try and find an optimal:
+1. test a number of hidden layer between 1 and 4
+2. test different activation functions
+3. test different number of neurons in the internal layers, between 5 and 50
+4. change the number of epochs, between 100 and 800
+
+For each hyperparamater, we take the best configuration in terms of accuracy before changing the next hyperparameter. This manual approach may seem slow and "brute force"-like but it should help understand the mechanics of the network and identify the main performance drivers. As we show in the results, this is not the case.
+
+Following the manual approach, we use the `keras-tuner` Python module to automatically tune the model and try and improve the accuracy. This model is saved in the `AlphabetSoupCharity_Optimisation.h5` binary file.
+
+In all the steps above, the same data as for Step 1, presented in the previous subsection, are used. In addition to the Step 1 data, we try two additional approaches with `keras-tuner`:
+1. We add the square of the 'asked amount' column as a feature
+2. We use the 'income' column as an ordinal feature instead of a nominal one
+
+To transform the income, we use the following conversion table:
+
+<table>
+    <tr>
+        <th>Original (nominal) value</th>
+        <th>Ordinal value</th>
+    </tr>
+    <tr>
+        <td>0</td>
+        <td>0</td>
+    </tr>
+    <tr>
+        <td>1-9999</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>10000-24999</td>
+        <td>2</td>
+    </tr>
+    <tr>
+        <td>25000-99999</td>
+        <td>3</td>
+    </tr>
+    <tr>
+        <td>100000-499999</td>
+        <td>4</td>
+    </tr>
+    <tr>
+        <td>1M-5M</td>
+        <td>5</td>
+    </tr>
+    <tr>
+        <td>5M-10M</td>
+        <td>6</td>
+    </tr>
+    <tr>
+        <td>10M-50M</td>
+        <td>7</td>
+    </tr>
+    <tr>
+        <td>50M+</td>
+        <td>8</td>
+    <tr>
+</table>
+
 
 #### Step 3: Using `NAME` as a feature
 After discussion with some peers, it seems that adding the `NAME` column back as a feature could significantly improves the results. We look at this option in Step 3.
@@ -86,11 +145,110 @@ After discussion with some peers, it seems that adding the `NAME` column back as
 During this step, we look again at the original data, without using `NAME`. More reading and research went into this step to understand industry's best practices and common approach. We look at a model with as few neurons and epochs as possible to accelerate the training.
 
 ### Results
-In Step 1, we built a simple preliminary model with the following structure:
+In Step 1, we use a preliminary model with the following structure:
 
 <img src=img/model_1.png>
 
 The output layer use a `sigmoid` activation function while all the other layers use `relu`. The model achieve an accuracy of 72.34% which is already close to the target of 75%.
 
+In Step 2, we start with the model from Step 1 shown above and get the following accuracy metrics when changing the number of hiddent layers between 1 and 4:
+
+<img src=img/accuracy_vs_number_of_hidden_layers.png>
+
+We fix the number of hidden layers to 3 as it gives the best performance and then change the activation function (the same function is used on all layers but the output one.) The following performance is achieved for the different functions:
+
+<img src=img/accuracy_vs_activation_functions.png>
+
+We select `selu` as our activation function and then change the number of neurons per layer (all layers have the same number of neurons):
+
+<img src=img/accuracy_vs_number_of_neurons.png>
+
+We keep 10 neurons in all the layers and the look at the influence of the number of epochs:
+
+<img src=img/accuracy_vs_number_of_epochs.png>
+
+The final model has the structure shown below:
+
+<img src=img/model_2.png>
+
+The accuracy of the optimised model is only 72.73% at best, which is barely an improvement compared to the model from Step 1 and still a long way from the requirement of 75%. The chart below shows the performance of all the models looked at in this Step 2 compared to the target of 75%:
+
+<img src=img/comparison_between_model_accuracies_and_target.png>
+
+The accuracies are all between 72.26% (min) and 72.73% (max), with an average of 72.57% so no significant driver is found so far that could help improve the performance. Moreover, as some of the steps were repeated during the code development, different results were obtained, indicating that the difference between models could simply come from differences in the random number generators used as part of the model training.
+
+Using `keras-tuner`, we can automate and accelerate the tuning process, while losing some transparency in the performance of the intermediate optimisation steps. The following design space is used by the tuner:
+
+<table>
+    <tr>
+        <th>Parameter</th>
+        <th>Possible values</th>
+    </tr>
+    <tr>
+        <td>Activation</td>
+        <td>relu, selu, sigmoid, tanh</td>
+    </tr>
+    <tr>
+        <td>Number of layers</td>
+        <td>Between 1 and 6</td>
+    </tr>
+    <tr>
+        <td>Neurons per layer</td>
+        <td>Between 1 and 20</td>
+    </tr>
+    <tr>
+        <td>Epochs</td>
+        <td>Up to 20</td>
+    </tr>
+<table>
+
+The best model has the structure shown below:
+
+<img src=img/model_3.png>
+
+An accuracy of 72.85% is achieved, which is still below the requirement.
+
+Changing the features, provide little to no improvement:
+- Adding the squared asked amount, leaves the accuracy at 72.85%
+- Changing the income from nominal to ordinal, only improves the accuracy by 0.01% 
+
 ### Conclusions
+
+<table>
+    <tr>
+        <th>Step</th>
+        <th>Model</th>
+        <th>Best accuracy</th>
+        <th>Remarks</th>
+    </tr>
+    <tr>
+        <td>Step 1</td>
+        <td>Baseline</td>
+        <td>72.34%</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Step 2</td>
+        <td>Manually optimised</td>
+        <td>72.73%</td>
+        <td>Using the data as in Step 1</td>
+    </tr>
+    <tr>
+        <td>Step 2</td>
+        <td>Optimised with keras-tuner</td>
+        <td>72.85%</td>
+        <td>Using the data as in Step 1</td>
+    </tr>
+    <tr>
+        <td>Step 2</td>
+        <td>Optimised with keras-tuner</td>
+        <td>72.85%</td>
+        <td>Using the squared amount as a feature</td>
+    </tr>
+    <tr>
+        <td>Step 2</td>
+        <td>Optimised with keras-tuner</td>
+        <td>72.86%</td>
+        <td>Using the income as an ordinal feature</td>
+    </tr>
 
